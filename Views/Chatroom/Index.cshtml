@@ -1,0 +1,291 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>  Chat App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta content="Chat" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <link href="~/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+    <div class="page-wrapper" id="chatApp">
+
+        <!-- Page Content-->
+        <div class="page-content">
+            <div class="container-fluid">
+                <!-- Page-Title -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="page-title-box">
+                            <div class="row">
+
+
+                            </div><!--end row-->
+                        </div>
+                    </div><!--end col-->
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+
+                        <div class="chat-box-left overflow-auto" style="height: 600px">
+                            <ul class="nav nav-pills mb-3 nav-justified" id="pills-tab" role="tablist">
+                            </ul>
+
+                            <div data-simplebar>
+                                <div class="tab-content chat-list" id="pills-tabContent">
+                                    <div class="tab-pane fade show active" id="general_chat">
+
+                                        <a href="#" class="media new-message" v-on:click="setCurrentRecipient(chatuser)" v-for="chatuser in onlineUsers" :key="chatuser.connectionId">
+                                            <div class="media-left">
+                                                <img src="https://res.cloudinary.com/rhyoliteprime/image/upload/v1533814738/images_6.png" alt="" class="rounded-circle thumb-md">
+                                                <span class="round-10 bg-success"></span>
+                                            </div>
+                                            <div class="media-body">
+                                                <div class="d-inline-block">
+                                                    <h6> {{chatuser.username }} </h6>
+                                                </div>
+
+                                            </div>
+                                        </a>
+
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-box-right overflow-auto" style="height: 600px">
+                            <div class="chat-header">
+                                <a href="#" class="media">
+                                    <div class="media-left">
+                                        <img src="assets/images/users/user-4.jpg" alt="user" class="rounded-circle thumb-md">
+                                    </div><!-- media-left -->
+                                    <div class="media-body">
+                                        <div>
+                                            <h6 class="m-0"> @User.Identity.Name    </h6>
+                                            <p class="mb-0"> Online </p>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="chat-features">
+                                    <div class="d-none d-sm-inline-block">
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-body" data-simplebar>
+                                <div class="chat-detail overflow-auto" v-for="msg in messages" :key="msg.id">
+
+                                    <div class="media" v-if="msg.type==0">
+                                        <div class="media-img">
+                                            <img src="https://res.cloudinary.com/rhyoliteprime/image/upload/v1533814738/images_6.png" alt="user" class="rounded-circle thumb-md">
+                                        </div>
+                                        <div class="media-body">
+                                            <div class="chat-msg">
+                                                <p> {{msg.msgContent}} </p>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="media" v-if="msg.type==1">
+                                        <div class="media-body reverse">
+                                            <div class="chat-msg">
+                                                <p> {{msg.msgContent}} </p>
+                                            </div>
+
+                                        </div>
+                                        <div class="media-img">
+                                            <img src="https://res.cloudinary.com/rhyoliteprime/image/upload/v1533814738/images_6.png" alt="user" class="rounded-circle thumb-md">
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="chat-footer">
+                                <div class="row">
+                                    <div class="col-12 col-md-9">
+                                        <span class="chat-admin"><img src="assets/images/users/user-4.jpg" alt="user" class="rounded-circle thumb-sm"></span>
+                                        <input type="text" class="form-control" v-model="userMessage" placeholder="Type something here..." v-on:keyup.13="sendMsg">
+                                    </div><!-- col-8 -->
+                                    <div class="col-3 text-right">
+                                        <div class="d-none d-sm-inline-block chat-features">
+
+                                            <a href="#"><i class="fas fa-paper-plane" v-on:click="sendMsg"></i></a>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="~/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="~/assets/js/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="~/js/signalr.js"></script>
+
+</body>
+
+
+</html>
+
+<script>
+
+   var app = new Vue({
+                el: "#chatApp",
+                data: {
+                    userName: '@User?.Identity.Name',
+                    userMessage: "",
+                    connection: "",
+                    messages: [],
+                    onlineUsers: [],
+                    errorMessage: null,
+                    currentRecipient: "",
+                    currentRecipientConnectionId: "",
+
+                 },
+            methods: {
+                sendMsg: function (event) {
+                    if (this.userName && this.userMessage && this.currentRecipient) {
+                        // ---------
+                        //  Call hub methods from client
+                        // ---------
+                        console.log("....");
+                        var senderId = this.userName;
+                        var msgContent = this.userMessage;
+                        var id = Math.random();
+                        this.messages.push({ senderId, msgContent,id,type:1 });
+                        this.connection
+                            .invoke("SendMessage", this.userName, this.currentRecipient, this.userMessage)
+                            .catch(function(err) {
+                                return console.error(err.toSting());
+                            });
+
+                        this.userMessage = "";
+                    }
+                    else if(this.userName==""){
+                        this.errorMessage = "User not Logged in";
+                    }
+                    else if (this.currentRecipient == "") {
+                        this.errorMessage = "Select a recipient to send message.";
+                    }
+                },
+                setCurrentRecipient(userInfo) {
+
+                    this.currentRecipient = userInfo.username;
+                    this.currentRecipientConnectionId = userInfo.connectionId;
+                },
+                getChatHistory() {
+
+                    return axios.get('/ChatRoom/GetChatHistory?receipient=' + this.currentRecipient).then(response => response.data);
+
+                },
+
+            },
+            created: function() {
+
+                this.connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/chatHub")
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
+                this.connection.start().catch(function(err) {
+                    return console.error(err.toSting());
+                });
+
+                if (this.currentRecipient !="") {
+
+                    this.getChatHistory()
+                        .then(data => {
+
+                            data.forEach(  ( v )=>
+                            {
+                                if (v.senderId === this.userName) {
+                                    v.type = 1;
+                                }
+                                else {
+                                    v.type = 0;
+                                }
+
+                            });
+
+                            this.messages = data;
+                            console.log("data", data);
+                            console.log("messages",this.messages);
+
+                        })
+                        .catch(err => console.log(err));
+                }
+
+
+            },
+            mounted: function() {
+
+
+                this.connection.on("ReceiveMessage", (senderId, msgContent)=> {
+                    console.log("message received", msgContent);
+                    this.messages.push({ senderId, msgContent, type: 0  });
+                });
+
+                this.connection.on("UpdateOnlineUsers",  (onlineusers)=> {
+                    console.log(onlineusers);
+                    var filteredArray = onlineusers.filter( (u)=> {
+                        return u.username !=this.userName;
+
+                    });
+
+                    if (filteredArray.length > 0) {
+
+                        this.currentRecipient = filteredArray[0].username;
+                        this.currentRecipientConnectionId = filteredArray[0].connectionId;
+
+                        this.getChatHistory()
+                            .then(data => {
+
+                                data.forEach((v) => {
+                                    if (v.senderId === this.userName) {
+                                        v.type = 1;
+                                    } else {
+                                        v.type = 0;
+                                    }
+
+                                });
+
+                                this.messages = data;
+
+                            })
+                            .catch(err => console.log(err));
+                    }
+                    else {
+                        this.messages = [];
+                    }
+                    this.onlineUsers = filteredArray;
+                });
+
+            }
+        });
+
+</script>
