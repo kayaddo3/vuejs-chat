@@ -184,7 +184,6 @@ namespace SampleMvcApp.Hubs
 
     public static class ConnectedUser
     {
-        //public static List<string> Ids = new List<string>();
         public static List<UserOnline> UsersOnline = new List<UserOnline>();
     }
 
