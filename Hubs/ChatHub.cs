@@ -130,13 +130,29 @@ namespace SampleMvcApp.Hubs
         }
         public async Task SendMessage(string username, string recipientid, string message)
         {
-            var recipient = ConnectedUser.UsersOnline.FirstOrDefault(x => x.Username == recipientid);
+           // var recipient = ConnectedUser.UsersOnline.FirstOrDefault(x => x.Username == recipientid);
 
-            if (recipient.UserIdentifier != null)
-                await Clients.User(recipient.UserIdentifier).SendAsync("ReceiveMessage", username, message);
+            var cacheKey = "onlineUsers";
+            string serializedCachedOnlineUsers;
+            var onlineUsers = new List<UserOnline>();
+            byte[] redisCacheOnlineUsers = await _distributedCache.GetAsync(cacheKey);
+
+
+            if (redisCacheOnlineUsers != null && redisCacheOnlineUsers.Length > 0)
+            {
+                serializedCachedOnlineUsers = Encoding.UTF8.GetString(redisCacheOnlineUsers);
+                onlineUsers = JsonConvert.DeserializeObject<List<UserOnline>>(serializedCachedOnlineUsers);
+
+                var recipient = onlineUsers.FirstOrDefault(x => x.Username == recipientid);
+                if (recipient?.UserIdentifier != null)
+                {
+                    await Clients.User(recipient.UserIdentifier).SendAsync("ReceiveMessage", username, message);
+
+                }
+            }
+
             //await Clients.All.SendAsync("ReceiveMessage", username, message);
             //save to db...
-
 
             var currentChat = await _chatAppDbContext.Chat.FirstOrDefaultAsync(a=>(a.SenderId== username && a.RecipientId==recipientid) || (a.SenderId==recipientid && a.RecipientId==username) );
             if (currentChat!=null)

@@ -13,7 +13,7 @@
       "launchBrowser": true,
       "launchUrl": "http://localhost:3000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "."
       }
     },
     "SampleMvcApp": {
@@ -21,7 +21,8 @@
       "launchBrowser": true,
       "launchUrl": "http://localhost:3000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT_Staging": "Staging",
+        "ASPNETCORE_ENVIRONMENT": "Production"
       }
     }
   }
