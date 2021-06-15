@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using SampleMvcApp.Support;
@@ -29,12 +30,32 @@ namespace SampleMvcApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Latest);
+
             services.ConfigureSameSiteNoneCookies();
             services.AddSignalR();
+
+            services.AddCors(options => options.AddPolicy("CorsPolicy", builder =>
+            {
+                builder
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowAnyOrigin()
+                    .DisallowCredentials();
+            }));
+
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = "127.0.0.1:6379";
             });
+
+            services.Configure<CookiePolicyOptions>(options =>
+            {
+                // This lambda determines whether user consent for non-essential cookies is needed for a given request.
+                options.CheckConsentNeeded = context => true;
+                options.MinimumSameSitePolicy = SameSiteMode.None;
+            });
+
             services.AddTransient<ChatAppDbContext>();
 
             services.AddDbContextPool<ChatAppDbContext>(options =>
@@ -49,6 +70,7 @@ namespace SampleMvcApp
             .AddOpenIdConnect("Auth0", options => {
                 // Set the authority to your Auth0 domain
                 options.Authority = $"https://{Configuration["Auth0:Domain"]}";
+
 
                 // Configure the Auth0 Client ID and Client Secret
                 options.ClientId = Configuration["Auth0:ClientId"];
@@ -67,12 +89,14 @@ namespace SampleMvcApp
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    NameClaimType = "name"
+                    NameClaimType = "name",
+                    //ValidateIssuer = false,
+                    //IssuerSigningKey = 
                 };
 
                 // Set the callback path, so Auth0 will call back to http://localhost:3000/callback
                 // Also ensure that you have added the URL as an Allowed Callback URL in your Auth0 dashboard
-                options.CallbackPath = new PathString("/callback");
+                //options.CallbackPath = new PathString("/callback");
 
                 // Configure the Claims Issuer to be Auth0
                 options.ClaimsIssuer = "Auth0";
@@ -113,21 +137,29 @@ namespace SampleMvcApp
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
+            if (env.IsDevelopment() || env.IsProduction() || env.IsStaging())
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
+            //else if(env.IsProduction() || env.IsStaging())
+            //{
+            //    app.UseExceptionHandler("/Home/Error");
+            //    app.UseHsts();
+            //}
+
+            app.UseHsts();
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
             app.UseRouting();
-
+            app.UseCors(builder =>
+            {
+                builder.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .DisallowCredentials();
+            });
             app.UseAuthentication();
             app.UseAuthorization();
 
